@@ -27,13 +27,15 @@ const openai = initOpenAI();
 const app = express().use(body_parser.json());
 
 let firstMessageToGeorge = true;
+let numVendorOneChatRounds = 0;
+let doneNegotiating = false;
 
 let ownerChatHistory = [
     { "role": "system", "content": "" },
 ];
 
 let vendorOneChatHistory = [
-    { "role": "system", "content": "You are a master negotiator for a restaurant in San Francisco. You are talking to a vendor. Using the next message as a reference, extract the ingredients you need to negotiate for. Then talk to me, the vendor, ask for the prices of the ingredients. You will attempt to negotiate these prices to find me a good deal. Don't sound like an AI. don't always use correct grammar. this is happening over whatsapp on a mobile phone keyboard. sound like a normal immigrant restaurant owner." },
+    { "role": "system", "content": "You are a master negotiator for a restaurant in San Francisco. You are talking to a vendor. Using the next message as a reference, extract the ingredients you need to negotiate for. Then talk to me, the vendor, ask for the prices of the ingredients. You will attempt to negotiate these prices to find me a good deal. Introduce yourself as George. Don't sound like an AI. don't always use correct grammar. this is happening over whatsapp on a mobile phone keyboard. sound like a normal immigrant restaurant owner." },
 ];
 
 app.listen(PORT || 3000, () => {
@@ -88,8 +90,17 @@ const handleMessage = async (req, res) => {
                 }
 
             } else if (senderNum === VENDOR_1) {
-                const response = `Hi.. I'm VENDOR1, your forwarded message is ${msgBody}`;
-                await sendMessage(phoneNumberId, RESTAURANT_OWNER, response);
+                if (numVendorOneChatRounds == 5) {
+                    vendorOneChatHistory.push({ "role": "system", "content": "Okay, look at the chat history above and find the best price offered so for the the items. Then give me back a message listing these ingredients and best prices." });
+                    const generatedResponse = await generateGPTResponse(vendorOneChatHistory);
+                    await sendMessage(phoneNumberId, RESTAURANT_OWNER, generatedResponse);
+                    doneNegotiating = true;
+                }
+
+                vendorOneChatHistory.push({ "role": "user", "content": msgBody });
+                const generatedResponse = await generateGPTResponse(vendorOneChatHistory);
+                await sendMessage(phoneNumberId, VENDOR_1, generatedResponse);
+                numVendorOneChatRounds++;
             }
             res.sendStatus(200);
         } else {
