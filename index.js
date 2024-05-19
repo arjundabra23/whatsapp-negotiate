@@ -29,17 +29,11 @@ const app = express().use(body_parser.json());
 let firstMessageToGeorge = true;
 
 let ownerChatHistory = [
-    { "role": "system", "content": "You are a helpful assistant." },
-    { "role": "user", "content": "Who won the world series in 2020?" },
-    { "role": "assistant", "content": "The Los Angeles Dodgers won the World Series in 2020." },
-    { "role": "user", "content": "Where was it played?" }
+    { "role": "system", "content": "" },
 ];
 
 let vendorOneChatHistory = [
-    { "role": "system", "content": "You are a helpful assistant." },
-    { "role": "user", "content": "Who won the world series in 2020?" },
-    { "role": "assistant", "content": "The Los Angeles Dodgers won the World Series in 2020." },
-    { "role": "user", "content": "Where was it played?" }
+    { "role": "system", "content": "pretend you are a master negotiator named George for my restaurant in San Francisco. you are in a chat with the vendor and you are going to ask for the prices of the ingredients I give you in the next message. Then you will attempt to negotiate these prices to find me a good deal. don't sound like an AI. don't always use correct grammar. this is happening over whatsapp on a mobile phone keyboard. sound like a normal immigrant restaurant owner." },
 ];
 
 app.listen(PORT || 3000, () => {
