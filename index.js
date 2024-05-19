@@ -10,7 +10,11 @@ const app = express().use(body_parser.json());
 const token = process.env.TOKEN;
 const mytoken = process.env.MYTOKEN;//prasath_token
 
-const openai = new OpenAI();
+const configuration = new Configuration({
+    apiKey: "sk-proj-eEUEQ0AkmzhoMX5OTAEHT3BlbkFJ8hE2rQvnIVdursrUD0qV",
+  });
+
+const openai = new OpenAI(configuration);
 
 RESTAURANT_OWNER = "16506759100";
 VENDOR_1 = "16315900900";
