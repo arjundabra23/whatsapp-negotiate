@@ -9,8 +9,8 @@ const token = process.env.TOKEN;
 const mytoken = process.env.MYTOKEN;//prasath_token
 
 
-RESTAURANT_OWNER = "16506759100";
-VENDOR_1 = "16315900900";
+RESTAURANT_OWNER = "+16506759100";
+VENDOR_1 = "+16315900900";
 
 app.listen(process.env.PORT, () => {
     console.log("webhook is listening");
@@ -55,7 +55,7 @@ app.post("/webhook", (req, res) => { //i want some
                 let msg_body = body_param.entry[0].changes[0].value.messages[0].text.body;
 
                 console.log("phone number " + phon_no_id);
-                console.log("from " + from);
+                console.log("from " + sender_num);
                 console.log("boady param " + msg_body);
 
                 axios({
