@@ -18,6 +18,13 @@ const VENDOR_3 = "";
 const openai = initOpenAI();
 const app = express().use(body_parser.json());
 
+let ownerChatHistory = [
+    { "role": "system", "content": "You are a helpful assistant." },
+    { "role": "user", "content": "Who won the world series in 2020?" },
+    { "role": "assistant", "content": "The Los Angeles Dodgers won the World Series in 2020." },
+    { "role": "user", "content": "Where was it played?" }
+];
+
 app.listen(PORT || 3000, () => {
     console.log(`Webhook is listening on port ${PORT}`);
 });
@@ -105,7 +112,7 @@ const sendMessage = async (phoneNumberId, recipient, message) => {
 };
 
 function initOpenAI() {
-    console.log("initializing openai instance");
+    console.log("Initializing openai instance");
     const openai = new OpenAI({
         apiKey: OPENAI_API_KEY,
     });
