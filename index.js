@@ -1,4 +1,4 @@
-const OpenAI = require("openai");
+const { Configuration, OpenAI } = require("openai");
 const express = require("express");
 const body_parser = require("body-parser");
 const axios = require("axios");
