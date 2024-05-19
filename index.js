@@ -1,3 +1,5 @@
+import OpenAI from "openai";
+
 const express = require("express");
 const body_parser = require("body-parser");
 const axios = require("axios");
@@ -8,6 +10,7 @@ const app = express().use(body_parser.json());
 const token = process.env.TOKEN;
 const mytoken = process.env.MYTOKEN;//prasath_token
 
+const openai = new OpenAI();
 
 RESTAURANT_OWNER = "16506759100";
 VENDOR_1 = "16315900900";
@@ -24,18 +27,15 @@ app.get("/webhook", (req, res) => {
 
 
     if (mode && token) {
-
         if (mode === "subscribe" && token === mytoken) {
             res.status(200).send(challange);
         } else {
             res.status(403);
         }
-
     }
-
 });
 
-app.post("/webhook", (req, res) => { //i want some 
+app.post("/webhook", async (req, res) => {
 
     let body_param = req.body;
 
@@ -58,6 +58,8 @@ app.post("/webhook", (req, res) => { //i want some
                 console.log("phone number " + phon_no_id);
                 console.log("boady param " + msg_body);
 
+                let generated_response = await generateGPTResponse();
+
                 axios({
                     method: "POST",
                     url: "https://graph.facebook.com/v13.0/" + phon_no_id + "/messages?access_token=" + token,
@@ -65,7 +67,7 @@ app.post("/webhook", (req, res) => { //i want some
                         messaging_product: "whatsapp",
                         to: VENDOR_1,
                         text: {
-                            body: "Hi.. I'm OWNER, your forwarded message is " + msg_body
+                            body: generated_response
                         }
                     },
                     headers: {
@@ -108,3 +110,18 @@ app.post("/webhook", (req, res) => { //i want some
 app.get("/", (req, res) => {
     res.status(200).send("hello this is webhook setup");
 });
+
+let generateGPTResponse = async () => {
+
+    const completion = await openai.chat.completions.create({
+        messages: [{ "role": "system", "content": "You are a helpful assistant." },
+        { "role": "user", "content": "Who won the world series in 2020?" },
+        { "role": "assistant", "content": "The Los Angeles Dodgers won the World Series in 2020." },
+        { "role": "user", "content": "Where was it played?" }],
+        model: "gpt-3.5-turbo",
+    });
+
+    console.log(completion.choices[0]);
+
+    return completion.choices[0];
+}
