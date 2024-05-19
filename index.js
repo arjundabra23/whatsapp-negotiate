@@ -26,7 +26,16 @@ const initOpenAI = () => {
 const openai = initOpenAI();
 const app = express().use(body_parser.json());
 
+let firstMessageToGeorge = true;
+
 let ownerChatHistory = [
+    { "role": "system", "content": "You are a helpful assistant." },
+    { "role": "user", "content": "Who won the world series in 2020?" },
+    { "role": "assistant", "content": "The Los Angeles Dodgers won the World Series in 2020." },
+    { "role": "user", "content": "Where was it played?" }
+];
+
+let vendorOneChatHistory = [
     { "role": "system", "content": "You are a helpful assistant." },
     { "role": "user", "content": "Who won the world series in 2020?" },
     { "role": "assistant", "content": "The Los Angeles Dodgers won the World Series in 2020." },
@@ -74,11 +83,15 @@ const handleMessage = async (req, res) => {
             console.log(`Message body: ${msgBody}`);
 
             if (senderNum === RESTAURANT_OWNER) {
-                await sendMessage(phoneNumberId, RESTAURANT_OWNER, "Okay, got it. I'll go talk to your vendors and create the order for the best prices this week.");
-                // you neee
-                ownerChatHistory.push({ "role": "user", "content": msgBody });
-                const generatedResponse = await generateGPTResponse(ownerChatHistory);
-                await sendMessage(phoneNumberId, VENDOR_1, generatedResponse);
+                if (firstMessageToGeorge) {
+                    firstMessageToGeorge = false;
+                    await sendMessage(phoneNumberId, RESTAURANT_OWNER, "Okay, got it. I'll go talk to your vendors and create the order for the best prices this week.");
+                    vendorOneChatHistory.push({ "role": "system", "content": msgBody });
+                    const generatedResponse = await generateGPTResponse(vendorOneChatHistory);
+                    await sendMessage(phoneNumberId, VENDOR_1, generatedResponse);
+                } else {
+                    await sendMessage(phoneNumberId, RESTAURANT_OWNER, "I'm busying talking to your vendors right now. I'll come back to you when I'm done and then we can chat further.");
+                }
 
             } else if (senderNum === VENDOR_1) {
                 const response = `Hi.. I'm VENDOR1, your forwarded message is ${msgBody}`;
