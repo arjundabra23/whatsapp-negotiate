@@ -1,4 +1,4 @@
-const { OpenAI } = require("openai");
+const { Configuration, OpenAI } = require("openai");
 const express = require("express");
 const body_parser = require("body-parser");
 const axios = require("axios");
@@ -10,13 +10,13 @@ const app = express().use(body_parser.json());
 const token = process.env.TOKEN;
 const mytoken = process.env.MYTOKEN;
 
-// const configuration = new Configuration({
-//     apiKey: "sk-proj-eEUEQ0AkmzhoMX5OTAEHT3BlbkFJ8hE2rQvnIVdursrUD0qV",
-// });
+const configuration = new Configuration({
+    apiKey: "sk-proj-eEUEQ0AkmzhoMX5OTAEHT3BlbkFJ8hE2rQvnIVdursrUD0qV",
+});
 
 console.log("initializing open ai instance");
 
-const openai = new OpenAI();
+const openai = new OpenAI(configuration);
 
 RESTAURANT_OWNER = "16506759100";
 VENDOR_1 = "16315900900";
@@ -118,17 +118,22 @@ app.get("/", (req, res) => {
 });
 
 let generateGPTResponse = async () => {
+    try {
+        console.log("Generating GPT response");
+        const completion = await openai.createChatCompletion({
+            model: "gpt-3.5-turbo",
+            messages: [
+                { role: "system", content: "You are a helpful assistant." },
+                { role: "user", content: "Who won the world series in 2020?" },
+                { role: "assistant", content: "The Los Angeles Dodgers won the World Series in 2020." },
+                { role: "user", content: "Where was it played?" }
+            ],
+        });
 
-    console.log("This ran");
-    const completion = await openai.chat.completions.create({
-        messages: [{ "role": "system", "content": "You are a helpful assistant." },
-        { "role": "user", "content": "Who won the world series in 2020?" },
-        { "role": "assistant", "content": "The Los Angeles Dodgers won the World Series in 2020." },
-        { "role": "user", "content": "Where was it played?" }],
-        model: "gpt-3.5-turbo",
-    });
-
-    console.log(completion.choices[0]);
-
-    return completion.choices[0];
-}
+        console.log(completion.data.choices[0].message);
+        return completion.data.choices[0].message.content;
+    } catch (error) {
+        console.error("Error generating GPT response:", error);
+        return "Sorry, I couldn't generate a response.";
+    }
+};
