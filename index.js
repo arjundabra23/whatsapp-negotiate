@@ -64,7 +64,7 @@ app.post("/webhook", async (req, res) => {
                 console.log("phone number " + phon_no_id);
                 console.log("boady param " + msg_body);
 
-                let generated_response = await generateGPTResponse();
+                // let generated_response = await generateGPTResponse();
 
                 axios({
                     method: "POST",
@@ -73,7 +73,7 @@ app.post("/webhook", async (req, res) => {
                         messaging_product: "whatsapp",
                         to: VENDOR_1,
                         text: {
-                            body: generated_response
+                            body: "generated_response"
                         }
                     },
                     headers: {
