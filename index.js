@@ -14,6 +14,8 @@ const configuration = new Configuration({
     apiKey: "sk-proj-eEUEQ0AkmzhoMX5OTAEHT3BlbkFJ8hE2rQvnIVdursrUD0qV",
   });
 
+console.log("initializing open ai instance");
+
 const openai = new OpenAI(configuration);
 
 RESTAURANT_OWNER = "16506759100";
@@ -117,6 +119,7 @@ app.get("/", (req, res) => {
 
 let generateGPTResponse = async () => {
 
+    console.log("This ran");
     const completion = await openai.chat.completions.create({
         messages: [{ "role": "system", "content": "You are a helpful assistant." },
         { "role": "user", "content": "Who won the world series in 2020?" },
