@@ -8,7 +8,7 @@ require('dotenv').config();
 const app = express().use(body_parser.json());
 
 const token = process.env.TOKEN;
-const mytoken = process.env.MYTOKEN;//prasath_token
+const mytoken = process.env.MYTOKEN;
 
 // const configuration = new Configuration({
 //     apiKey: "sk-proj-eEUEQ0AkmzhoMX5OTAEHT3BlbkFJ8hE2rQvnIVdursrUD0qV",
@@ -16,7 +16,7 @@ const mytoken = process.env.MYTOKEN;//prasath_token
 
 console.log("initializing open ai instance");
 
-const openai = new OpenAI(configuration);
+// const openai = new OpenAI(configuration);
 
 RESTAURANT_OWNER = "16506759100";
 VENDOR_1 = "16315900900";
@@ -73,7 +73,7 @@ app.post("/webhook", async (req, res) => {
                         messaging_product: "whatsapp",
                         to: VENDOR_1,
                         text: {
-                            body: "generated_response"
+                            body: "generated_responses"
                         }
                     },
                     headers: {
@@ -117,18 +117,18 @@ app.get("/", (req, res) => {
     res.status(200).send("hello this is webhook setup");
 });
 
-let generateGPTResponse = async () => {
+// let generateGPTResponse = async () => {
 
-    console.log("This ran");
-    const completion = await openai.chat.completions.create({
-        messages: [{ "role": "system", "content": "You are a helpful assistant." },
-        { "role": "user", "content": "Who won the world series in 2020?" },
-        { "role": "assistant", "content": "The Los Angeles Dodgers won the World Series in 2020." },
-        { "role": "user", "content": "Where was it played?" }],
-        model: "gpt-3.5-turbo",
-    });
+//     console.log("This ran");
+//     const completion = await openai.chat.completions.create({
+//         messages: [{ "role": "system", "content": "You are a helpful assistant." },
+//         { "role": "user", "content": "Who won the world series in 2020?" },
+//         { "role": "assistant", "content": "The Los Angeles Dodgers won the World Series in 2020." },
+//         { "role": "user", "content": "Where was it played?" }],
+//         model: "gpt-3.5-turbo",
+//     });
 
-    console.log(completion.choices[0]);
+//     console.log(completion.choices[0]);
 
-    return completion.choices[0];
-}
+//     return completion.choices[0];
+// }
