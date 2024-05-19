@@ -15,10 +15,6 @@ const VENDOR_1 = "16315900900";
 const VENDOR_2 = "14159993716";
 const VENDOR_3 = "";
 
-let firstMessageToGeorge = true;
-let doneNegotiating = false;
-let numVendorOneChatRounds = 0;
-
 const openai = initOpenAI();
 const app = express().use(body_parser.json());
 
@@ -27,10 +23,6 @@ let ownerChatHistory = [
     { "role": "user", "content": "Who won the world series in 2020?" },
     { "role": "assistant", "content": "The Los Angeles Dodgers won the World Series in 2020." },
     { "role": "user", "content": "Where was it played?" }
-];
-
-let vendorOneChatHistory = [
-    { "role": "system", "content": "You are a helpful assistant." },
 ];
 
 app.listen(PORT || 3000, () => {
@@ -80,34 +72,15 @@ const handleMessage = async (req, res) => {
             console.log(`Message body: ${msgBody}`);
 
             if (senderNum === RESTAURANT_OWNER) {
-                if (firstMessageToGeorge) {
-                    firstMessageToGeorge = false;
-                    await sendMessage(phoneNumberId, RESTAURANT_OWNER, "Okay, got it. I'll go talk to your vendors and create the order for the best prices this week.");
-
-                    vendorOneChatHistory.push({ "role": "system", "content": msgBody });
-                    const generatedResponse = await generateGPTResponse(vendorOneChatHistory);
-                    await sendMessage(phoneNumberId, VENDOR_1, generatedResponse);
-                } else {
-                    if (doneNegotiating) {
-                        ownerChatHistory.push({ "role": "user", "content": msgBody });
-                        const generatedResponse = await generateGPTResponse(ownerChatHistory);
-                        await sendMessage(phoneNumberId, RESTAURANT_OWNER, generatedResponse);
-                    } else {
-                        await sendMessage(phoneNumberId, RESTAURANT_OWNER, "I'm busying talking to your vendors right now. I'll come back to you when I'm done and then we can chat further.");
-                    }
-                }
-            } else if (senderNum === VENDOR_1) {
-                if (numVendorOneChatRounds == 5) {
-                    vendorOneChatHistory.push({ "role": "system", "content": "okay so go back and find the best price so far" });
-                    const generatedResponse = await generateGPTResponse(vendorOneChatHistory);
-                    await sendMessage(phoneNumberId, RESTAURANT_OWNER, generatedResponse);
-                    doneNegotiating = true;
-                }
-
-                vendorOneChatHistory.push({ "role": "user", "content": msgBody });
-                const generatedResponse = await generateGPTResponse(vendorOneChatHistory);
+                await sendMessage(phoneNumberId, RESTAURANT_OWNER, "Okay, got it. I'll go talk to your vendors and create the order for the best prices this week.");
+                // you neee
+                ownerChatHistory.push({ "role": "user", "content": msgBody });
+                const generatedResponse = await generateGPTResponse(ownerChatHistory);
                 await sendMessage(phoneNumberId, VENDOR_1, generatedResponse);
-                numVendorOneChatRounds++;
+
+            } else if (senderNum === VENDOR_1) {
+                const response = `Hi.. I'm VENDOR1, your forwarded message is ${msgBody}`;
+                await sendMessage(phoneNumberId, RESTAURANT_OWNER, response);
             }
             res.sendStatus(200);
         } else {
@@ -118,18 +91,17 @@ const handleMessage = async (req, res) => {
 
 // Function to generate a response using GPT
 const generateGPTResponse = async (entireChat) => {
-    return "test";
-    // try {
-    //     const completion = await openai.chat.completions.create({
-    //         model: "gpt-3.5-turbo",
-    //         messages: entireChat,
-    //     });
+    try {
+        const completion = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: entireChat,
+        });
 
-    //     return completion.choices[0].message.content;
-    // } catch (error) {
-    //     console.error("Error generating response:", error);
-    //     return "Sorry, I couldn't generate a response.";
-    // }
+        return completion.choices[0].message.content;
+    } catch (error) {
+        console.error("Error generating response:", error);
+        return "Sorry, I couldn't generate a response.";
+    }
 };
 
 // Function to send a message
