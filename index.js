@@ -35,7 +35,7 @@ let ownerChatHistory = [
 ];
 
 let vendorOneChatHistory = [
-    { "role": "system", "content": "You are a master negotiator for a restaurant in San Francisco. You are talking to a vendor. Using the next message as a reference, extract the ingredients you need to negotiate for. Then talk to me, the vendor, ask for the prices of the ingredients. You will attempt to negotiate these prices to find me a good deal. Introduce yourself as George. Don't sound like an AI. don't always use correct grammar. this is happening over whatsapp on a mobile phone keyboard. sound like a normal immigrant restaurant owner." },
+    { "role": "system", "content": "You are a master negotiator for a restaurant in San Francisco. You are talking to a vendor. Using the next message as a reference, extract the ingredients you need to negotiate for. Then talk to me, the vendor, ask for the prices of the ingredients. You will attempt to negotiate these prices to find me a good deal. Don't sound like an AI. don't always use correct grammar. this is happening over whatsapp on a mobile phone keyboard. sound like a normal immigrant restaurant owner." },
 ];
 
 app.listen(PORT || 3000, () => {
@@ -84,21 +84,25 @@ const handleMessage = async (req, res) => {
                     await sendMessage(phoneNumberId, RESTAURANT_OWNER, "Okay, got it. I'll go talk to your vendors and create the order for the best prices this week.");
                     vendorOneChatHistory.push({ "role": "system", "content": msgBody });
                     const generatedResponse = await generateGPTResponse(vendorOneChatHistory);
+                    vendorOneChatHistory.push({ "role": "assistant", "content": generatedResponse });
                     await sendMessage(phoneNumberId, VENDOR_1, generatedResponse);
                 } else {
                     await sendMessage(phoneNumberId, RESTAURANT_OWNER, "I'm busying talking to your vendors right now. I'll come back to you when I'm done and then we can chat further.");
                 }
 
             } else if (senderNum === VENDOR_1) {
+                console.log("I got a message from vendor")
                 if (numVendorOneChatRounds == 5) {
                     vendorOneChatHistory.push({ "role": "system", "content": "Okay, look at the chat history above and find the best price offered so for the the items. Then give me back a message listing these ingredients and best prices. You are now talking to the restaurant owner, so address the owner in this message." });
                     const generatedResponse = await generateGPTResponse(vendorOneChatHistory);
                     await sendMessage(phoneNumberId, RESTAURANT_OWNER, generatedResponse);
                     doneNegotiating = true;
                 }
-
+                console.log("pushing vendor message to");
+                console.log(msgBody);
                 vendorOneChatHistory.push({ "role": "user", "content": msgBody });
                 const generatedResponse = await generateGPTResponse(vendorOneChatHistory);
+                vendorOneChatHistory.push({ "role": "assistant", "content": generatedResponse });
                 await sendMessage(phoneNumberId, VENDOR_1, generatedResponse);
                 numVendorOneChatRounds++;
             }
