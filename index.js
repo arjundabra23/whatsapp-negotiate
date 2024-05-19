@@ -15,6 +15,14 @@ const VENDOR_1 = "16315900900";
 const VENDOR_2 = "14159993716";
 const VENDOR_3 = "";
 
+const initOpenAI = () => {
+    console.log("Initializing openai instance");
+    const openai = new OpenAI({
+        apiKey: OPENAI_API_KEY,
+    });
+    return openai;
+}
+
 const openai = initOpenAI();
 const app = express().use(body_parser.json());
 
@@ -29,13 +37,7 @@ app.listen(PORT || 3000, () => {
     console.log(`Webhook is listening on port ${PORT}`);
 });
 
-const initOpenAI = () => {
-    console.log("Initializing openai instance");
-    const openai = new OpenAI({
-        apiKey: OPENAI_API_KEY,
-    });
-    return openai;
-}
+
 
 // Function to handle webhook verification
 const verifyWebhook = (req, res) => {
