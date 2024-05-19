@@ -118,17 +118,18 @@ const handleMessage = async (req, res) => {
 
 // Function to generate a response using GPT
 const generateGPTResponse = async (entireChat) => {
-    try {
-        const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
-            messages: entireChat,
-        });
+    return "test";
+    // try {
+    //     const completion = await openai.chat.completions.create({
+    //         model: "gpt-3.5-turbo",
+    //         messages: entireChat,
+    //     });
 
-        return completion.choices[0].message.content;
-    } catch (error) {
-        console.error("Error generating response:", error);
-        return "Sorry, I couldn't generate a response.";
-    }
+    //     return completion.choices[0].message.content;
+    // } catch (error) {
+    //     console.error("Error generating response:", error);
+    //     return "Sorry, I couldn't generate a response.";
+    // }
 };
 
 // Function to send a message
