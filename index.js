@@ -113,7 +113,7 @@ const handleMessage = async (req, res) => {
 const generateGPTResponse = async (entireChat) => {
     try {
         const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
+            model: "gpt-4o",
             messages: entireChat,
         });
 
