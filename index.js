@@ -15,6 +15,10 @@ const VENDOR_1 = "16315900900";
 const VENDOR_2 = "14159993716";
 const VENDOR_3 = "";
 
+let firstMessageToGeorge = true;
+let doneNegotiating = false;
+let numVendorOneChatRounds = 0;
+
 const openai = initOpenAI();
 const app = express().use(body_parser.json());
 
@@ -25,9 +29,21 @@ let ownerChatHistory = [
     { "role": "user", "content": "Where was it played?" }
 ];
 
+let vendorOneChatHistory = [
+    { "role": "system", "content": "You are a helpful assistant." },
+];
+
 app.listen(PORT || 3000, () => {
     console.log(`Webhook is listening on port ${PORT}`);
 });
+
+const initOpenAI = () => {
+    console.log("Initializing openai instance");
+    const openai = new OpenAI({
+        apiKey: OPENAI_API_KEY,
+    });
+    return openai;
+}
 
 // Function to handle webhook verification
 const verifyWebhook = (req, res) => {
@@ -64,13 +80,34 @@ const handleMessage = async (req, res) => {
             console.log(`Message body: ${msgBody}`);
 
             if (senderNum === RESTAURANT_OWNER) {
-                ownerChatHistory.push({ "role": "user", "content": msgBody });
-                const generatedResponse = await generateGPTResponse(ownerChatHistory);
+                if (firstMessageToGeorge) {
+                    firstMessageToGeorge = false;
+                    await sendMessage(phoneNumberId, RESTAURANT_OWNER, "Okay, got it. I'll go talk to your vendors and create the order for the best prices this week.");
 
-                await sendMessage(phoneNumberId, VENDOR_1, generatedResponse);
+                    vendorOneChatHistory.push({ "role": "system", "content": msgBody });
+                    const generatedResponse = await generateGPTResponse(vendorOneChatHistory);
+                    await sendMessage(phoneNumberId, VENDOR_1, generatedResponse);
+                } else {
+                    if (doneNegotiating) {
+                        ownerChatHistory.push({ "role": "user", "content": msgBody });
+                        const generatedResponse = await generateGPTResponse(ownerChatHistory);
+                        await sendMessage(phoneNumberId, RESTAURANT_OWNER, generatedResponse);
+                    } else {
+                        await sendMessage(phoneNumberId, RESTAURANT_OWNER, "I'm busying talking to your vendors right now. I'll come back to you when I'm done and then we can chat further.");
+                    }
+                }
             } else if (senderNum === VENDOR_1) {
-                const response = `Hi.. I'm VENDOR1, your forwarded message is ${msgBody}`;
-                await sendMessage(phoneNumberId, RESTAURANT_OWNER, response);
+                if (numVendorOneChatRounds == 5) {
+                    vendorOneChatHistory.push({ "role": "system", "content": "okay so go back and find the best price so far" });
+                    const generatedResponse = await generateGPTResponse(vendorOneChatHistory);
+                    await sendMessage(phoneNumberId, RESTAURANT_OWNER, generatedResponse);
+                    doneNegotiating = true;
+                }
+
+                vendorOneChatHistory.push({ "role": "user", "content": msgBody });
+                const generatedResponse = await generateGPTResponse(vendorOneChatHistory);
+                await sendMessage(phoneNumberId, VENDOR_1, generatedResponse);
+                numVendorOneChatRounds++;
             }
             res.sendStatus(200);
         } else {
@@ -111,14 +148,6 @@ const sendMessage = async (phoneNumberId, recipient, message) => {
     }
 };
 
-function initOpenAI() {
-    console.log("Initializing openai instance");
-    const openai = new OpenAI({
-        apiKey: OPENAI_API_KEY,
-    });
-    return openai;
-}
-
 // Routes
 app.get("/webhook", verifyWebhook);
 app.post("/webhook", handleMessage);
@@ -126,3 +155,26 @@ app.post("/webhook", handleMessage);
 app.get("/", (req, res) => {
     res.status(200).send("Hello, this is webhook setup");
 });
+
+// owner set-up prompts:
+// you get the message for what items
+// you say, okay, i'll go find these items
+// then you pass the message string for the items you were given by the owner in to the ownerChatHistory
+// along with a prompt that tells you to negotiate based on these
+// the conversation happens with a vendor
+
+// once you have conversrved 6 turns, pass in a prompt to vendorOneChatHistory saying that okay find the best price so far 
+// // and return a response in the form of a json
+// then we want to post this json to a Firestore backend
+// conversation ending prompt
+
+// technical steps
+// OWNER logic:
+// you have a metaprompt of what needs to happen
+// accept a list of items
+// say okay, I will go and check and come back to you
+// pass this information to the vendor 
+// how: you need to pass that string to the vendor whatsapp convo and say: 
+// // "here is a list of items you need to inquire on pricing about"
+
+// Vendor 1 Logic:
