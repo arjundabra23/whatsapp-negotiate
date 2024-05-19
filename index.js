@@ -9,7 +9,7 @@ const token = process.env.TOKEN;
 const mytoken = process.env.MYTOKEN;//prasath_token
 
 
-RESTAURANT_OWNER = "+15556066529";
+RESTAURANT_OWNER = "+16506759100";
 VENDOR_1 = "+16315900900";
 
 app.listen(process.env.PORT, () => {
