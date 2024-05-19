@@ -1,121 +1,83 @@
+// Import dependencies
 const { OpenAI } = require("openai");
 const express = require("express");
 const body_parser = require("body-parser");
 const axios = require("axios");
-
 require('dotenv').config();
 
+// Constants and configurations
+const RESTAURANT_OWNER = "16506759100";
+const PORT = process.env.PORT;
+const TOKEN = process.env.TOKEN;
+const MY_TOKEN = process.env.MYTOKEN;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const VENDOR_1 = "16315900900";
+const VENDOR_2 = "14159993716";
+const VENDOR_3 = "";
+
+const openai = initOpenAI();
 const app = express().use(body_parser.json());
 
-const token = process.env.TOKEN;
-const mytoken = process.env.MYTOKEN;
-
-console.log("initializing openai instance");
-
-// Set up OpenAI configuration
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+app.listen(PORT || 3000, () => {
+    console.log(`Webhook is listening on port ${PORT}`);
 });
 
-const RESTAURANT_OWNER = "16506759100";
-const VENDOR_1 = "16315900900";
-
-app.listen(process.env.PORT || 3000, () => {
-    console.log("webhook is listening");
-});
-
-// To verify the callback URL from the dashboard side - cloud API side
-app.get("/webhook", (req, res) => {
-    let mode = req.query["hub.mode"];
-    let challenge = req.query["hub.challenge"];
-    let token = req.query["hub.verify_token"];
+// Function to handle webhook verification
+const verifyWebhook = (req, res) => {
+    const mode = req.query["hub.mode"];
+    const challenge = req.query["hub.challenge"];
+    const token = req.query["hub.verify_token"];
 
     if (mode && token) {
-        if (mode === "subscribe" && token === mytoken) {
+        if (mode === "subscribe" && token === MYTOKEN) {
             res.status(200).send(challenge);
         } else {
             res.status(403).send("Forbidden");
         }
     }
-});
+};
 
-app.post("/webhook", async (req, res) => {
-    let body_param = req.body;
+// Function to handle incoming messages
+const handleMessage = async (req, res) => {
+    const bodyParam = req.body;
+    console.log(JSON.stringify(bodyParam, null, 2));
 
-    console.log(JSON.stringify(body_param, null, 2));
+    if (bodyParam.object) {
+        const entry = bodyParam.entry?.[0];
+        const changes = entry?.changes?.[0];
+        const message = changes?.value?.messages?.[0];
 
-    if (body_param.object) {
-        // We receive a message
-        console.log("inside body param");
-        if (body_param.entry &&
-            body_param.entry[0].changes &&
-            body_param.entry[0].changes[0].value.messages &&
-            body_param.entry[0].changes[0].value.messages[0]
-        ) {
-            let sender_num = body_param.entry[0].changes[0].value.messages[0].from;
-            console.log("from " + sender_num);
-            let phon_no_id = body_param.entry[0].changes[0].value.metadata.phone_number_id;
-            let msg_body = body_param.entry[0].changes[0].value.messages[0].text.body;
+        if (message) {
+            const senderNum = message.from;
+            const phoneNumberId = changes.value.metadata.phone_number_id;
+            const msgBody = message.text.body;
 
-            console.log("phone number " + phon_no_id);
-            console.log("body param " + msg_body);
+            console.log(`From: ${senderNum}`);
+            console.log(`Phone number ID: ${phoneNumberId}`);
+            console.log(`Message body: ${msgBody}`);
 
-            if (sender_num == RESTAURANT_OWNER) {
-                let generated_response = await generateGPTResponse();
+            if (senderNum === RESTAURANT_OWNER) {
+                ownerChatHistory.push({ "role": "user", "content": msgBody });
+                const generatedResponse = await generateGPTResponse(ownerChatHistory);
 
-                axios({
-                    method: "POST",
-                    url: "https://graph.facebook.com/v13.0/" + phon_no_id + "/messages?access_token=" + token,
-                    data: {
-                        messaging_product: "whatsapp",
-                        to: VENDOR_1,
-                        text: {
-                            body: generated_response
-                        }
-                    },
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                });
-            } else if (sender_num == VENDOR_1) {
-                axios({
-                    method: "POST",
-                    url: "https://graph.facebook.com/v13.0/" + phon_no_id + "/messages?access_token=" + token,
-                    data: {
-                        messaging_product: "whatsapp",
-                        to: RESTAURANT_OWNER,
-                        text: {
-                            body: "Hi.. I'm VENDOR1, your forwarded message is " + msg_body
-                        }
-                    },
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                });
+                await sendMessage(phoneNumberId, VENDOR_1, generatedResponse);
+            } else if (senderNum === VENDOR_1) {
+                const response = `Hi.. I'm VENDOR1, your forwarded message is ${msgBody}`;
+                await sendMessage(phoneNumberId, RESTAURANT_OWNER, response);
             }
             res.sendStatus(200);
         } else {
             res.sendStatus(404);
         }
     }
-});
+};
 
-app.get("/", (req, res) => {
-    res.status(200).send("hello this is webhook setup");
-});
-
-let generateGPTResponse = async () => {
-    console.log("This ran");
-
+// Function to generate a response using GPT
+const generateGPTResponse = async (entireChat) => {
     try {
         const completion = await openai.chat.completions.create({
             model: "gpt-3.5-turbo",
-            messages: [
-                { "role": "system", "content": "You are a helpful assistant." },
-                { "role": "user", "content": "Who won the world series in 2020?" },
-                { "role": "assistant", "content": "The Los Angeles Dodgers won the World Series in 2020." },
-                { "role": "user", "content": "Where was it played?" }
-            ],
+            messages: entireChat,
         });
 
         return completion.choices[0].message.content;
@@ -124,3 +86,36 @@ let generateGPTResponse = async () => {
         return "Sorry, I couldn't generate a response.";
     }
 };
+
+// Function to send a message
+const sendMessage = async (phoneNumberId, recipient, message) => {
+    try {
+        await axios.post(
+            `https://graph.facebook.com/v13.0/${phoneNumberId}/messages?access_token=${TOKEN}`,
+            {
+                messaging_product: "whatsapp",
+                to: recipient,
+                text: { body: message },
+            },
+            { headers: { "Content-Type": "application/json" } }
+        );
+    } catch (error) {
+        console.error("Error sending message:", error);
+    }
+};
+
+function initOpenAI() {
+    console.log("initializing openai instance");
+    const openai = new OpenAI({
+        apiKey: OPENAI_API_KEY,
+    });
+    return openai;
+}
+
+// Routes
+app.get("/webhook", verifyWebhook);
+app.post("/webhook", handleMessage);
+
+app.get("/", (req, res) => {
+    res.status(200).send("Hello, this is webhook setup");
+});
