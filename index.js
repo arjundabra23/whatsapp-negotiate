@@ -1,8 +1,8 @@
-import OpenAI from "openai";
-
+const OpenAI = require("openai");
 const express = require("express");
 const body_parser = require("body-parser");
 const axios = require("axios");
+
 require('dotenv').config();
 
 const app = express().use(body_parser.json());
@@ -12,7 +12,7 @@ const mytoken = process.env.MYTOKEN;//prasath_token
 
 const configuration = new Configuration({
     apiKey: "sk-proj-eEUEQ0AkmzhoMX5OTAEHT3BlbkFJ8hE2rQvnIVdursrUD0qV",
-  });
+});
 
 console.log("initializing open ai instance");
 
