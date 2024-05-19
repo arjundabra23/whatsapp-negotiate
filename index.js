@@ -16,7 +16,7 @@ const mytoken = process.env.MYTOKEN;
 
 console.log("initializing open ai instance");
 
-// const openai = new OpenAI(configuration);
+const openai = new OpenAI();
 
 RESTAURANT_OWNER = "16506759100";
 VENDOR_1 = "16315900900";
