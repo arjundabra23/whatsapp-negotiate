@@ -1,4 +1,4 @@
-const { Configuration, OpenAI } = require("openai");
+const { OpenAI } = require("openai");
 const express = require("express");
 const body_parser = require("body-parser");
 const axios = require("axios");
@@ -10,9 +10,9 @@ const app = express().use(body_parser.json());
 const token = process.env.TOKEN;
 const mytoken = process.env.MYTOKEN;//prasath_token
 
-const configuration = new Configuration({
-    apiKey: "sk-proj-eEUEQ0AkmzhoMX5OTAEHT3BlbkFJ8hE2rQvnIVdursrUD0qV",
-});
+// const configuration = new Configuration({
+//     apiKey: "sk-proj-eEUEQ0AkmzhoMX5OTAEHT3BlbkFJ8hE2rQvnIVdursrUD0qV",
+// });
 
 console.log("initializing open ai instance");
 
